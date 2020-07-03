@@ -17,12 +17,10 @@ func Execute() {
 		Run: func(cmd *cobra.Command, args []string) {
 			propertiesFileName := args[0]
 			jsonOutputFileName := args[1]
-			if flat {
-				if response, err := ParseFlat(propertiesFileName, jsonOutputFileName); err != nil {
-					panic(err)
-				} else {
-					fmt.Printf("Wrote %d bytes\n", response)
-				}
+			if response, err := ParseFlat(propertiesFileName, jsonOutputFileName); err != nil {
+				panic(err)
+			} else {
+				fmt.Printf("Wrote %d bytes\n", response)
 			}
 
 		},
