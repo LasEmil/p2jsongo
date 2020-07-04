@@ -27,7 +27,7 @@ If this flag is set the resulting json file will have only one level
 
 ```
 Usage:
-  p2json [command]
+  p2jsongo [command]
 
 Available Commands:
   help        Help about any command
