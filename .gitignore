@@ -2,3 +2,6 @@ main
 /debian
 /pkg
 /homebrew
+test.json
+test.properties
+bigfile.properties
