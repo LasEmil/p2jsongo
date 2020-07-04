@@ -10,53 +10,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-var ErrMalformedFile = errors.New("File is malformed")
-var ErrCreatingFIle = errors.New("Error when creating file")
-
-// ParseFlat parses properties file to json only on one level, not going deep into the properties
-func ParseFlat(pFileName, jsonFileName string) (int, error) {
-	m := make(map[string]string)
-	file, err := os.Open(pFileName)
-	skipLineCounter := 0
-	if err != nil {
-		return 0, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		eqIdx := strings.Index(line, "=")
-		if eqIdx > -1 {
-			key := line[:eqIdx]
-			value := line[eqIdx+1:]
-			m[key] = value
-		} else {
-			skipLineCounter = skipLineCounter + 1
-		}
-	}
-	json, err := jsoniter.Marshal(&m)
-	if err != nil {
-		return 0, err
-	}
-
-	newFile, err := os.Create(jsonFileName)
-	if err != nil {
-		return 0, ErrCreatingFIle
-	}
-	defer newFile.Close()
-	w := bufio.NewWriter(newFile)
-	writeBuffer, err := w.WriteString(string(json))
-	if err != nil {
-		return 0, err
-	}
-	w.Flush()
-	if skipLineCounter > 0 {
-		fmt.Printf("Skipped %d lines.\n", skipLineCounter)
-	}
-	return writeBuffer, nil
-}
+var errMalformedFile = errors.New("File is malformed")
+var errCreatingFile = errors.New("Error while creating file")
+var errNoSuchFile = errors.New("Properties file: No such file or directory")
 
 func typeof(v interface{}) string {
 	return fmt.Sprintf("%T", v)
@@ -83,13 +39,13 @@ func createPath(m MyMap, path string, value string) MyMap {
 	return m
 }
 
-// ParseDeep function parses the java's properties file into nested json
-func ParseDeep(pFileName, jsonFileName string) (int, error) {
+// Parse function parses the java's properties file into nested json
+func Parse(pFileName, jsonFileName string, flat bool) (int, error) {
 	m := make(MyMap)
 	file, err := os.Open(pFileName)
 	skipLineCounter := 0
 	if err != nil {
-		return 0, err
+		return 0, errNoSuchFile
 	}
 	defer file.Close()
 
@@ -101,7 +57,11 @@ func ParseDeep(pFileName, jsonFileName string) (int, error) {
 		if eqIdx > -1 {
 			key := line[:eqIdx]
 			value := line[eqIdx+1:]
-			createPath(m, key, value)
+			if flat {
+				m[key] = value
+			} else {
+				createPath(m, key, value)
+			}
 		} else {
 			skipLineCounter = skipLineCounter + 1
 		}
@@ -113,7 +73,7 @@ func ParseDeep(pFileName, jsonFileName string) (int, error) {
 
 	newFile, err := os.Create(jsonFileName)
 	if err != nil {
-		return 0, ErrCreatingFIle
+		return 0, errCreatingFile
 	}
 	defer newFile.Close()
 	w := bufio.NewWriter(newFile)

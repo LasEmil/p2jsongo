@@ -27,18 +27,10 @@ func Execute() {
 			jsonOutputFileName := args[1]
 			defer elapsed("Parsing")()
 
-			if flat {
-				if response, err := ParseFlat(propertiesFileName, jsonOutputFileName); err != nil {
-					panic(err)
-				} else {
-					fmt.Printf("Wrote %d bytes\n", response)
-				}
+			if response, err := Parse(propertiesFileName, jsonOutputFileName, flat); err != nil {
+				panic(err)
 			} else {
-				if response, err := ParseDeep(propertiesFileName, jsonOutputFileName); err != nil {
-					panic(err)
-				} else {
-					fmt.Printf("Wrote %d bytes\n", response)
-				}
+				fmt.Printf("Wrote %d bytes\n", response)
 			}
 
 		},
