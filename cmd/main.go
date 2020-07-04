@@ -2,9 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
+
+func elapsed(what string) func() {
+	start := time.Now()
+	return func() {
+		fmt.Printf("%s took %v\n", what, time.Since(start))
+	}
+}
 
 // Execute function executes the program
 func Execute() {
@@ -17,16 +25,26 @@ func Execute() {
 		Run: func(cmd *cobra.Command, args []string) {
 			propertiesFileName := args[0]
 			jsonOutputFileName := args[1]
-			if response, err := ParseFlat(propertiesFileName, jsonOutputFileName); err != nil {
-				panic(err)
+			defer elapsed("Parsing")()
+
+			if flat {
+				if response, err := ParseFlat(propertiesFileName, jsonOutputFileName); err != nil {
+					panic(err)
+				} else {
+					fmt.Printf("Wrote %d bytes\n", response)
+				}
 			} else {
-				fmt.Printf("Wrote %d bytes\n", response)
+				if response, err := ParseDeep(propertiesFileName, jsonOutputFileName); err != nil {
+					panic(err)
+				} else {
+					fmt.Printf("Wrote %d bytes\n", response)
+				}
 			}
 
 		},
 	}
 
-	var rootCmd = &cobra.Command{Use: "p2json"}
+	var rootCmd = &cobra.Command{Use: "p2jsongo"}
 	rootCmd.PersistentFlags().BoolVarP(&flat, "flat", "f", false, "flat parse")
 	rootCmd.AddCommand(parse)
 	rootCmd.Execute()
