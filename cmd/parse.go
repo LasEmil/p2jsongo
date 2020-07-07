@@ -40,10 +40,9 @@ func createPath(m map[string]interface{}, path string, value string) MyMap {
 }
 
 // Parse function parses the java's properties file into nested json
-func Parse(pFileName, jsonFileName string, flat bool) (int, error) {
+func Parse(input, output string, flat bool) (int, error) {
 	m := make(map[string]interface{})
-	file, err := os.Open(pFileName)
-	skipLineCounter := 0
+	file, err := os.Open(input)
 	if err != nil {
 		return 0, errNoSuchFile
 	}
@@ -62,8 +61,6 @@ func Parse(pFileName, jsonFileName string, flat bool) (int, error) {
 			} else {
 				createPath(m, key, value)
 			}
-		} else {
-			skipLineCounter = skipLineCounter + 1
 		}
 	}
 	json, err := jsoniter.Marshal(&m)
@@ -71,7 +68,7 @@ func Parse(pFileName, jsonFileName string, flat bool) (int, error) {
 		return 0, err
 	}
 
-	newFile, err := os.Create(jsonFileName)
+	newFile, err := os.Create(output)
 	if err != nil {
 		return 0, errCreatingFile
 	}
@@ -82,8 +79,6 @@ func Parse(pFileName, jsonFileName string, flat bool) (int, error) {
 		return 0, err
 	}
 	w.Flush()
-	if skipLineCounter > 0 {
-		fmt.Printf("Skipped %d lines.\n", skipLineCounter)
-	}
+
 	return writeBuffer, nil
 }

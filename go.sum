@@ -121,6 +121,8 @@ github.com/laher/argo v0.0.0-20140722103944-11d91c83cc0f h1:fQ8JwxJN77cxE0foUmSH
 github.com/laher/argo v0.0.0-20140722103944-11d91c83cc0f/go.mod h1:Ymqfd31XvifvQ001Ty97DbYjQoeJPnb1WVkFhGeNYA4=
 github.com/laher/goxc v0.18.1 h1:b5KJsjerACeEBsFWBveVzdUjc5wetTA5IQhOSjFJx50=
 github.com/laher/goxc v0.18.1/go.mod h1:NdnX1aggrtsAowOUacIAYkuGKn2Md8Ej2DpoPUUqofs=
+github.com/logrusorgru/aurora v2.0.3+incompatible h1:tOpm7WcpBTn4fjmVfgpQq0EfczGlG91VSDkswnjF5A8=
+github.com/logrusorgru/aurora v2.0.3+incompatible/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDePerRcY=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
