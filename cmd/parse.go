@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
@@ -13,10 +12,6 @@ import (
 var errMalformedFile = errors.New("File is malformed")
 var errCreatingFile = errors.New("Error while creating file")
 var errNoSuchFile = errors.New("Properties file: No such file or directory")
-
-func typeof(v interface{}) string {
-	return fmt.Sprintf("%T", v)
-}
 
 // MyMap is empty map interface
 type MyMap map[string]interface{}
@@ -52,16 +47,22 @@ func Parse(input, output string, flat bool) (int, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		eqIdx := strings.Index(line, "=")
-		if eqIdx > -1 {
-			key := line[:eqIdx]
-			value := line[eqIdx+1:]
-			if flat {
-				m[key] = value
-			} else {
-				createPath(m, key, value)
+		if line != "" {
+			// Removing comments
+			if string(line[0]) != "#" {
+				eqIdx := strings.Index(line, "=")
+				if eqIdx > -1 {
+					key := line[:eqIdx]
+					value := line[eqIdx+1:]
+					if flat {
+						m[key] = value
+					} else {
+						createPath(m, key, value)
+					}
+				}
 			}
 		}
+
 	}
 	json, err := jsoniter.Marshal(&m)
 	if err != nil {

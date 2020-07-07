@@ -58,3 +58,7 @@ func exists(path string) (bool, error) {
 	}
 	return false, err
 }
+
+func typeof(v interface{}) string {
+	return fmt.Sprintf("%T", v)
+}
