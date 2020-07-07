@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,6 +19,29 @@ func elapsed(what string) func() {
 	}
 }
 
+// GetFileName returns file name without extension
+func getFileName(arg string) string {
+	dotIdx := strings.Index(arg, ".")
+	fileName := arg[:dotIdx]
+	return fileName
+}
+func parseSingleFile(args []string, source string, outputFileName string, flat bool) {
+	defer elapsed("Parsing")()
+
+	if len(args) == 1 {
+		fileName := getFileName(source)
+		outputFileName = fmt.Sprintf("%s.%s", fileName, "json")
+	} else {
+		outputFileName = args[1]
+	}
+
+	if response, err := Parse(source, outputFileName, flat); err != nil {
+		panic(err)
+	} else {
+		fmt.Printf("Wrote %d bytes\n", response)
+	}
+}
+
 // Execute function executes the program
 func Execute() {
 	flat := false
@@ -21,18 +49,39 @@ func Execute() {
 		Use:   "parse [properties file to parse] [destination file]",
 		Short: "Parse properties file to json",
 		Long:  `Parse java's properties file format to json`,
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			propertiesFileName := args[0]
-			jsonOutputFileName := args[1]
-			defer elapsed("Parsing")()
-
-			if response, err := Parse(propertiesFileName, jsonOutputFileName, flat); err != nil {
-				panic(err)
-			} else {
-				fmt.Printf("Wrote %d bytes\n", response)
+			source := args[0]
+			var outputFileName string
+			fi, err := os.Stat(source)
+			if err != nil {
+				fmt.Println(err)
+				return
 			}
 
+			switch mode := fi.Mode(); {
+			case mode.IsDir():
+				// Entire directory parse
+				files, err := ioutil.ReadDir(source)
+				if err != nil {
+					log.Fatal(err)
+				}
+				for _, f := range files {
+					extension := filepath.Ext(f.Name())
+					if extension == ".properties" {
+						fileName := getFileName(f.Name())
+						path := fmt.Sprintf("%s/%s", source, f.Name())
+						outputPath := fmt.Sprintf("%s/%s.%s", source, fileName, "json")
+						fmt.Println(path)
+						fmt.Println(outputPath)
+					} else {
+						fmt.Printf("Not the properties file: %s\n", f.Name())
+					}
+				}
+			case mode.IsRegular():
+				// Single file parse
+				parseSingleFile(args, source, outputFileName, flat)
+			}
 		},
 	}
 

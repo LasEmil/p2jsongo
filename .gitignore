@@ -5,3 +5,5 @@ main
 test.json
 test.properties
 bigfile.properties
+bigfile.json
+testdir
