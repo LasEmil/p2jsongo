@@ -3,19 +3,25 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	a "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
 func elapsed(what string) func() {
 	start := time.Now()
 	return func() {
-		fmt.Printf("%s took %v\n", what, time.Since(start))
+		timeSinceStart := time.Since(start)
+		if timeSinceStart > time.Duration(time.Microsecond*500000) {
+			fmt.Printf("%s took %v\n", what, a.Yellow(timeSinceStart))
+		} else {
+			fmt.Printf("%s took %v\n", what, a.Green(timeSinceStart))
+
+		}
 	}
 }
 
@@ -25,62 +31,95 @@ func getFileName(arg string) string {
 	fileName := arg[:dotIdx]
 	return fileName
 }
-func parseSingleFile(args []string, source string, outputFileName string, flat bool) {
-	defer elapsed("Parsing")()
-
-	if len(args) == 1 {
-		fileName := getFileName(source)
-		outputFileName = fmt.Sprintf("%s.%s", fileName, "json")
-	} else {
-		outputFileName = args[1]
+func parseSingleFile(source string, outputFileName string, flat bool) (int, error) {
+	response, err := Parse(source, outputFileName, flat)
+	if err != nil {
+		return 0, err
 	}
+	return response, nil
 
-	if response, err := Parse(source, outputFileName, flat); err != nil {
-		panic(err)
-	} else {
-		fmt.Printf("Wrote %d bytes\n", response)
+}
+func parseDirectory(source string, flat bool) (int, error) {
+	files, err := ioutil.ReadDir(source)
+	bytesWritten := 0
+	skippedFiles := 0
+	if err != nil {
+		return 0, err
 	}
+	if len(files) == 0 {
+		return 0, fmt.Errorf("There is no files in the directory")
+	}
+	for _, f := range files {
+		extension := filepath.Ext(f.Name())
+		if extension == ".properties" {
+			fileName := getFileName(f.Name())
+			path := fmt.Sprintf("%s/%s", source, f.Name())
+			outputPath := fmt.Sprintf("%s/%s.%s", source, fileName, "json")
+
+			fileBytesWritten, err := parseSingleFile(path, outputPath, flat)
+			if err != nil {
+				return 0, err
+			}
+			bytesWritten = bytesWritten + fileBytesWritten
+		} else {
+			skippedFiles++
+		}
+	}
+	if skippedFiles > 0 {
+		fmt.Printf("Skipped %d files in directory %s (not \".properties\" file)\n", a.Red(skippedFiles), source)
+	}
+	return bytesWritten, nil
+}
+
+func isDir(path string) bool {
+	fi, err := os.Stat(path)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	switch mode := fi.Mode(); {
+	case mode.IsDir():
+		// Entire directory parse
+		return true
+
+	case mode.IsRegular():
+		// Single file parse
+		return false
+	}
+	return false
 }
 
 // Execute function executes the program
 func Execute() {
 	flat := false
 	var parse = &cobra.Command{
-		Use:   "parse [properties file to parse] [destination file]",
+		Use:   "parse [properties file or directory to parse] [destination filename (optional)]",
 		Short: "Parse properties file to json",
-		Long:  `Parse java's properties file format to json`,
+		Long:  `Parse java's properties file format to json. You can parse single file or entire directory. When parsing single file you have an option to add second argument: output filename, when parsing entire directory this argument is skipped and all files will be named like the source files`,
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			defer elapsed("Parsing")()
 			source := args[0]
-			var outputFileName string
-			fi, err := os.Stat(source)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
 
-			switch mode := fi.Mode(); {
-			case mode.IsDir():
-				// Entire directory parse
-				files, err := ioutil.ReadDir(source)
+			if isDir(source) {
+				bytesWritten, err := parseDirectory(source, flat)
 				if err != nil {
-					log.Fatal(err)
+					panic(err)
 				}
-				for _, f := range files {
-					extension := filepath.Ext(f.Name())
-					if extension == ".properties" {
-						fileName := getFileName(f.Name())
-						path := fmt.Sprintf("%s/%s", source, f.Name())
-						outputPath := fmt.Sprintf("%s/%s.%s", source, fileName, "json")
-						fmt.Println(path)
-						fmt.Println(outputPath)
-					} else {
-						fmt.Printf("Not the properties file: %s\n", f.Name())
-					}
+				fmt.Printf("Bytes written %d\n", a.Cyan(bytesWritten))
+			} else {
+				var outputFileName string
+				if len(args) == 1 {
+					fileName := getFileName(source)
+					outputFileName = fmt.Sprintf("%s.%s", fileName, "json")
+				} else {
+					outputFileName = args[1]
 				}
-			case mode.IsRegular():
-				// Single file parse
-				parseSingleFile(args, source, outputFileName, flat)
+				bytesWritten, err := parseSingleFile(source, outputFileName, flat)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Printf("Written %d bytes.\n", a.Cyan(bytesWritten))
 			}
 		},
 	}

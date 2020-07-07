@@ -16,7 +16,7 @@ $ brew install p2jsongo
 Basic usage:
 
 ```bash
-$ p2jsongo parse [properties file to parse] [destination file] [flags]
+$ p2jsongo parse [properties file or directory to parse] [destination filename (optional)] [flags]
 ```
 
 #### -f, --flat
@@ -36,6 +36,20 @@ Available Commands:
 Flags:
   -f, --flat   flat parse
   -h, --help   help for p2json
+```
+
+```
+parse description:
+Parse java's properties file format to json. You can parse single file or entire directory. When parsing single file you have an option to add second argument: output filename, when parsing entire directory this argument is skipped and all files will be named like the source files
+
+Usage:
+  p2jsongo parse [properties file or directory to parse] [destination filename (optional)] [flags]
+
+Flags:
+  -h, --help   help for parse
+
+Global Flags:
+  -f, --flat   flat parse
 ```
 
 ## License
