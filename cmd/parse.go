@@ -21,7 +21,7 @@ func typeof(v interface{}) string {
 // MyMap is empty map interface
 type MyMap map[string]interface{}
 
-func createPath(m MyMap, path string, value string) MyMap {
+func createPath(m map[string]interface{}, path string, value string) MyMap {
 	pathSlice := strings.Split(path, ".")
 	current := m
 	for len(pathSlice) > 1 {
@@ -41,7 +41,7 @@ func createPath(m MyMap, path string, value string) MyMap {
 
 // Parse function parses the java's properties file into nested json
 func Parse(pFileName, jsonFileName string, flat bool) (int, error) {
-	m := make(MyMap)
+	m := make(map[string]interface{})
 	file, err := os.Open(pFileName)
 	skipLineCounter := 0
 	if err != nil {
