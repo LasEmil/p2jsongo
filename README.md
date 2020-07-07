@@ -1,6 +1,6 @@
 # p2jsongo
 
-Simple, incomplete tool for transforming `.properties` files into json. Not suitable for production.
+Simple, tool for transforming `.properties` files into json.
 
 ## Installation
 
