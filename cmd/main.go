@@ -49,7 +49,7 @@ func parseDirectory(source string, flat bool) (int, error) {
 		fmt.Printf("Skipped %d files in directory %s (not \".properties\" file)\n", a.BrightRed(skippedFiles), source)
 	}
 	if parsedFiles > 0 {
-		fmt.Printf("Parsed %d files.\n", a.BrightBlue(parsedFiles))
+		fmt.Printf("Parsed %d files\n", a.BrightBlue(parsedFiles))
 	}
 	return bytesWritten, nil
 }
