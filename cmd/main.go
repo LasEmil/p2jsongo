@@ -21,6 +21,7 @@ func parseDirectory(source string, flat bool) (int, error) {
 	files, err := ioutil.ReadDir(source)
 	bytesWritten := 0
 	skippedFiles := 0
+	parsedFiles := 0
 	if err != nil {
 		return 0, err
 	}
@@ -39,12 +40,16 @@ func parseDirectory(source string, flat bool) (int, error) {
 				return 0, err
 			}
 			bytesWritten = bytesWritten + fileBytesWritten
+			parsedFiles++
 		} else {
 			skippedFiles++
 		}
 	}
 	if skippedFiles > 0 {
-		fmt.Printf("Skipped %d files in directory %s (not \".properties\" file)\n", a.Red(skippedFiles), source)
+		fmt.Printf("Skipped %d files in directory %s (not \".properties\" file)\n", a.BrightRed(skippedFiles), source)
+	}
+	if parsedFiles > 0 {
+		fmt.Printf("Parsed %d files.\n", a.BrightBlue(parsedFiles))
 	}
 	return bytesWritten, nil
 }
