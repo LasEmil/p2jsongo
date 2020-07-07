@@ -3,34 +3,12 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
 	a "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
-func elapsed(what string) func() {
-	start := time.Now()
-	return func() {
-		timeSinceStart := time.Since(start)
-		if timeSinceStart > time.Duration(time.Microsecond*500000) {
-			fmt.Printf("%s took %v\n", what, a.Yellow(timeSinceStart))
-		} else {
-			fmt.Printf("%s took %v\n", what, a.Green(timeSinceStart))
-
-		}
-	}
-}
-
-// GetFileName returns file name without extension
-func getFileName(arg string) string {
-	dotIdx := strings.Index(arg, ".")
-	fileName := arg[:dotIdx]
-	return fileName
-}
 func parseSingleFile(source string, outputFileName string, flat bool) (int, error) {
 	response, err := Parse(source, outputFileName, flat)
 	if err != nil {
@@ -71,24 +49,6 @@ func parseDirectory(source string, flat bool) (int, error) {
 	return bytesWritten, nil
 }
 
-func isDir(path string) bool {
-	fi, err := os.Stat(path)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-	switch mode := fi.Mode(); {
-	case mode.IsDir():
-		// Entire directory parse
-		return true
-
-	case mode.IsRegular():
-		// Single file parse
-		return false
-	}
-	return false
-}
-
 // Execute function executes the program
 func Execute() {
 	flat := false
@@ -98,28 +58,36 @@ func Execute() {
 		Long:  `Parse java's properties file format to json. You can parse single file or entire directory. When parsing single file you have an option to add second argument: output filename, when parsing entire directory this argument is skipped and all files will be named like the source files`,
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			defer elapsed("Parsing")()
 			source := args[0]
+			sourceExists, err := exists(source)
+			if err != nil {
+				panic(err)
+			}
+			if sourceExists {
+				defer elapsed("Parsing")()
 
-			if isDir(source) {
-				bytesWritten, err := parseDirectory(source, flat)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Printf("Bytes written %d\n", a.Cyan(bytesWritten))
-			} else {
-				var outputFileName string
-				if len(args) == 1 {
-					fileName := getFileName(source)
-					outputFileName = fmt.Sprintf("%s.%s", fileName, "json")
+				if isDir(source) {
+					bytesWritten, err := parseDirectory(source, flat)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Printf("Bytes written %d\n", a.Cyan(bytesWritten))
 				} else {
-					outputFileName = args[1]
+					var outputFileName string
+					if len(args) == 1 {
+						fileName := getFileName(source)
+						outputFileName = fmt.Sprintf("%s.%s", fileName, "json")
+					} else {
+						outputFileName = args[1]
+					}
+					bytesWritten, err := parseSingleFile(source, outputFileName, flat)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Printf("Written %d bytes.\n", a.Cyan(bytesWritten))
 				}
-				bytesWritten, err := parseSingleFile(source, outputFileName, flat)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Printf("Written %d bytes.\n", a.Cyan(bytesWritten))
+			} else {
+				fmt.Printf("%s: No such file or directory\n", source)
 			}
 		},
 	}
